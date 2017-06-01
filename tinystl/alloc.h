@@ -279,4 +279,6 @@ namespace tinystl {
     private:
         const static std::size_t extraSize = 8;
     };
+
+    using Alloc = DefaultAllocator;
 }
