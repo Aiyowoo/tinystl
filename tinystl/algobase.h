@@ -6,6 +6,127 @@
 #include "typetraits.h"
 
 namespace tinystl {
+    // --------------------------------------------------------------------------------
+    // swap
+    template<typename T>
+    inline void swap(T &lhs, T &rhs) {
+        T temp = lhs;
+        lhs = rhs;
+        rhs = temp;
+    }
+
+    // --------------------------------------------------------------------------------
+    // max
+    template<typename T>
+    inline const T& max(const T &lhs, const T &rhs) {
+        return lhs < rhs? rhs: lhs;
+    }
+
+    // --------------------------------------------------------------------------------
+    // min
+    template<typename T>
+    inline const T& min(const T &lhs, const T &rhs) {
+        return lhs < rhs? lhs: rhs;
+    }
+
+    // --------------------------------------------------------------------------------
+    // compare
+    template<typename InputIterator1, typename InputIterator2>
+    inline bool equal(InputIterator1 first1, InputIterator1 last1,
+               InputIterator2 first2) {
+        while(first1 != last1) {
+            if(*first1  != *first2) {
+                return false;
+            }
+            ++first1;
+            ++first2;
+        }
+        return true;
+    }
+
+    template<typename InputIterator1, typename InputIterator2>
+    inline bool less(InputIterator1 first1, InputIterator1 last1,
+                     InputIterator2 first2) {
+        while(first1 != last1) {
+            if(!(*first1 < *first2)) {
+                return false;
+            }
+            ++first1;
+            ++first2;
+        }
+        return true;
+    }
+
+    template<typename InputIterator1, typename InputIterator2>
+    inline bool greater(InputIterator1 first1, InputIterator1 last1,
+                        InputIterator2 first2) {
+        while(first1 != last1) {
+            if(*first1 < *first2) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    template<typename InputIterator1, typename InputIterator2>
+    inline bool lessEqual(InputIterator1 first1, InputIterator1 last1,
+                          InputIterator2 first2) {
+        return !greater(first1, last1, first2);
+    }
+
+    template<typename InputIterator1, typename InputIterator2>
+    inline bool greaterEqual(InputIterator1 first1, InputIterator1 last1,
+                             InputIterator2 first2) {
+        return !less(first1, last1, first2);
+    }
+
+    template<typename InputIterator1, typename InputIterator2>
+    inline bool equal(InputIterator1 first1, InputIterator1 last1,
+                      InputIterator2 first2, InputIterator2 last2) {
+        while(first1 != last1 && first2 != last2) {
+            if(*first1 != *first2) {
+                return false;
+            }
+            ++first1;
+            ++first2;
+        }
+        if(first1 != last1 || first2 != last2) {
+            return false;
+        }
+        return true;
+    }
+
+    template<typename InputIterator1, typename InputIterator2>
+    inline bool less(InputIterator1 first1, InputIterator1 last1,
+                     InputIterator2 first2, InputIterator2 last2) {
+        while(first1 != last1 && first2 != last2) {
+            if(*first1 < *first2) {
+                return true;
+            } else if(*first1 > *first2) {
+                return false;
+            }
+            ++first1;
+            ++first2;
+        }
+
+        return first1 == last1 && first2 != last2;
+    }
+
+    template<typename InputIterator1, typename InputIterator2>
+    inline bool greater(InputIterator1 first1, InputIterator1 last1,
+                        InputIterator2 first2, InputIterator2 last2) {
+        while(first1 != last1 && first2 != last2) {
+            if(*first1 > *first2) {
+                return true;
+            }
+            if(*first1 < *first2) {
+                return false;
+            }
+            ++first1;
+            ++first2;
+        }
+        return first1 != last1 && first2 == last2;
+    }
 
     // ---------------------------------------copy begin---------------------------------------
     // 只有指针才能使用memmove来做copy
@@ -58,7 +179,7 @@ namespace tinystl {
     inline T* copy(const T *first, const T *last, T *result) {
         using ValueType = typename IteratorTraits<T *>::ValueType;
         return copyAux(first, last, result,
-                       typename TypeTraits<ValueType>::hasTrivialAssignment());
+                       typename TypeTraits<ValueType>::hasTrivialAssignmentOperator());
     }
 
     // ------------------------------------copy end--------------------------------------
@@ -189,7 +310,7 @@ namespace tinystl {
     inline BidirectionalIterator2 copyBackward(BidirectionalIterator1 first,
                                                BidirectionalIterator1 last,
                                                BidirectionalIterator2 result) {
-        using IteratorCategory = typename IteratorTraits<BidirectionalIterator1>::IteratorCategory();
+        using IteratorCategory = typename IteratorTraits<BidirectionalIterator1>::IteratorCategory;
         return copyBackwardAux(first, last, result, IteratorCategory());
     }
 }

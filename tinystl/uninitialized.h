@@ -15,15 +15,15 @@ namespace tinystl {
     inline ForwardIterator uninitializedCopyAux(InputIterator first,
                                                 InputIterator last,
                                                 ForwardIterator result,
-                                                FalseType) {
-        return copy(first, last, result);
+                                                TrueType) {
+        return tinystl::copy(first, last, result);
     }
 
     template<typename InputIterator, typename ForwardIterator>
-    inline ForwardIterator uninitializeCopyAux(InputIterator first,
+    inline ForwardIterator uninitializedCopyAux(InputIterator first,
                                                InputIterator last,
                                                ForwardIterator result,
-                                               TrueType) {
+                                               FalseType) {
         ForwardIterator cur = result;
         try {
             while(first != last) {
@@ -35,13 +35,14 @@ namespace tinystl {
             destroy(result, cur);
             throw;
         }
+        return cur;
     }
 
     template<typename InputIterator, typename ForwardIterator>
-    inline ForwardIterator uninitializeCopy(InputIterator first, InputIterator last,
+    inline ForwardIterator uninitializedCopy(InputIterator first, InputIterator last,
                                             ForwardIterator result) {
-        return uninitializeCopyAux(first, last, result,
-                                   typename TypeTraits<typename IteratorTraits<ForwardIterator>::ValueType>::isPOD());
+        return uninitializedCopyAux(first, last, result,
+                                   typename TypeTraits<typename IteratorTraits<ForwardIterator>::ValueType>::isPODType());
     }
 
     // -------------------------------------uninitializedFill----------------------------------

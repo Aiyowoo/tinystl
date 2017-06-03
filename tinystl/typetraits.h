@@ -144,6 +144,28 @@ namespace tinystl {
         using hasTrivialDestructor = TrueType;
         using isPODType = TrueType;
     };
+
+    template<typename T>
+    struct IsInteger {
+        using Integral = FalseType;
+    };
+
+#define MAKE_INTEGER(T)  template<>  \
+    struct IsInteger<T> { \
+        using Integral = TrueType; \
+    }
+
+    MAKE_INTEGER(char);
+    MAKE_INTEGER(unsigned char);
+    MAKE_INTEGER(signed char);
+    MAKE_INTEGER(short);
+    MAKE_INTEGER(unsigned short);
+    MAKE_INTEGER(int);
+    MAKE_INTEGER(unsigned int);
+    MAKE_INTEGER(long);
+    MAKE_INTEGER(unsigned long);
+    MAKE_INTEGER(long long);
+    MAKE_INTEGER(unsigned long long);
 }
 
 #endif

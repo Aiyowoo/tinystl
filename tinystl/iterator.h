@@ -8,7 +8,7 @@
 namespace tinystl {
 
     template<typename Iterator>
-    class ReverseIterator {
+    class ReverseIteratorTemplate {
     public:
         using IteratorCategory = typename IteratorTraits<Iterator>::IteratorCategory;
         using ValueType = typename IteratorTraits<Iterator>::ValueType;
@@ -16,15 +16,15 @@ namespace tinystl {
         using Pointer = typename IteratorTraits<Iterator>::Pointer;
         using Reference = typename IteratorTraits<Iterator>::Reference;
 
-        using Self = ReverseIterator<Iterator>;
+        using Self = ReverseIteratorTemplate<Iterator>;
 
     public:
-        ReverseIterator() = default;
-        explicit ReverseIterator(Iterator iter): current(iter) {}
-        ReverseIterator(const Self &other): current(other.current) {}
+        ReverseIteratorTemplate() = default;
+        explicit ReverseIteratorTemplate(Iterator iter): current(iter) {}
+        ReverseIteratorTemplate(const Self &other): current(other.current) {}
 
         template<typename IteratorType>
-        ReverseIterator(const ReverseIterator<IteratorType> &other)
+        ReverseIteratorTemplate(const ReverseIteratorTemplate<IteratorType> &other)
             :current(other.base()) {}
 
         Iterator base() const {
@@ -89,52 +89,52 @@ namespace tinystl {
     };
 
     template<typename Iterator>
-    inline bool operator==(const ReverseIterator<Iterator> &lhs,
-                           const ReverseIterator<Iterator> &rhs) {
+    inline bool operator==(const ReverseIteratorTemplate<Iterator> &lhs,
+                           const ReverseIteratorTemplate<Iterator> &rhs) {
         return lhs.base() == rhs.base();
     }
 
     template<typename Iterator>
-    inline bool operator!=(const ReverseIterator<Iterator> &lhs,
-                           const ReverseIterator<Iterator> &rhs) {
+    inline bool operator!=(const ReverseIteratorTemplate<Iterator> &lhs,
+                           const ReverseIteratorTemplate<Iterator> &rhs) {
         return !(lhs == rhs);
     }
 
     template<typename Iterator>
-    inline bool operator<(const ReverseIterator<Iterator> &lhs,
-                          const ReverseIterator<Iterator> &rhs) {
+    inline bool operator<(const ReverseIteratorTemplate<Iterator> &lhs,
+                          const ReverseIteratorTemplate<Iterator> &rhs) {
         return lhs.base() > rhs.base();
     }
 
     template<typename Iterator>
-    inline bool operator>(const ReverseIterator<Iterator> &lhs,
-                          const ReverseIterator<Iterator> &rhs) {
+    inline bool operator>(const ReverseIteratorTemplate<Iterator> &lhs,
+                          const ReverseIteratorTemplate<Iterator> &rhs) {
         return lhs.base() < rhs.base();
     }
 
     template<typename Iterator>
-    inline bool operator<=(const ReverseIterator<Iterator> &lhs,
-                           const ReverseIterator<Iterator> &rhs) {
+    inline bool operator<=(const ReverseIteratorTemplate<Iterator> &lhs,
+                           const ReverseIteratorTemplate<Iterator> &rhs) {
         return lhs < rhs || lhs == rhs;
     }
 
     template<typename Iterator>
-    inline bool operator>=(const ReverseIterator<Iterator> &lhs,
-                           const ReverseIterator<Iterator> &rhs) {
+    inline bool operator>=(const ReverseIteratorTemplate<Iterator> &lhs,
+                           const ReverseIteratorTemplate<Iterator> &rhs) {
         return lhs > rhs || lhs == rhs;
     }
 
     template<typename Iterator>
     inline typename IteratorTraits<Iterator>::DifferenceType
-    operator-(const ReverseIterator<Iterator> &lhs,
-              const ReverseIterator<Iterator> &rhs) {
+    operator-(const ReverseIteratorTemplate<Iterator> &lhs,
+              const ReverseIteratorTemplate<Iterator> &rhs) {
         return rhs.base() - lhs.base();
     }
 
     template<typename Iterator>
-    inline ReverseIterator<Iterator>
+    inline ReverseIteratorTemplate<Iterator>
     operator+(typename IteratorTraits<Iterator>::DifferenceType n,
-              const ReverseIterator<Iterator> &iter) {
+              const ReverseIteratorTemplate<Iterator> &iter) {
         return iter - n;
     }
 
