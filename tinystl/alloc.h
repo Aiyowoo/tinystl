@@ -4,6 +4,9 @@
 #include <cstring>
 #include <cassert>
 
+#ifndef ALLOC_H
+#define ALLOC_H
+
 namespace tinystl {
     template<int inst>
     class MallocAlloc {
@@ -282,3 +285,5 @@ namespace tinystl {
 
     using Alloc = DefaultAllocator;
 }
+
+#endif

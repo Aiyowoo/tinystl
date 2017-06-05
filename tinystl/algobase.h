@@ -4,6 +4,8 @@
 #include <cstring>
 #include "iteratortraits.h"
 #include "typetraits.h"
+#include "iteratorbase.h"
+#include "iterator.h"
 
 namespace tinystl {
     // --------------------------------------------------------------------------------
@@ -34,6 +36,7 @@ namespace tinystl {
     template<typename InputIterator1, typename InputIterator2>
     inline bool equal(InputIterator1 first1, InputIterator1 last1,
                InputIterator2 first2) {
+        int n = tinystl::distance(first1, last1);
         while(first1 != last1) {
             if(*first1  != *first2) {
                 return false;
@@ -127,6 +130,22 @@ namespace tinystl {
         }
         return first1 != last1 && first2 == last2;
     }
+
+    // ----------------------------------------------------------------------
+    // compare function obj
+    template<typename T>
+    struct Less {
+        bool operator()(const T &lhs, const T &rhs) {
+            return lhs < rhs;
+        }
+    };
+
+    template<typename T>
+    struct Greater {
+        bool operator()(const T &lhs, const T &rhs) {
+            return lhs > rhs;
+        }
+    };
 
     // ---------------------------------------copy begin---------------------------------------
     // 只有指针才能使用memmove来做copy
