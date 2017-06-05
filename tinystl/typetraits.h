@@ -166,6 +166,28 @@ namespace tinystl {
     MAKE_INTEGER(unsigned long);
     MAKE_INTEGER(long long);
     MAKE_INTEGER(unsigned long long);
+
+    // ----------------------------------------------------------------------
+    // remove const
+    template<typename T>
+    struct RemoveConst {
+        using ResultType = T;
+    };
+
+    template<typename T>
+    struct RemoveConst<const T> {
+        using ResultType = T;
+    };
+
+    template<typename T>
+    struct RemoveConst<const T *> {
+        using ResultType = T*;
+    };
+
+    template<typename T>
+    struct RemoveConst<const T&> {
+        using ResultType = T&;
+    };
 }
 
 #endif
