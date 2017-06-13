@@ -867,7 +867,7 @@ namespace tinystl {
             _start = newStart;
         } else {
             Iterator newFinish = _reserveElementAtBack(count);
-            uninitializedFill(_finish, newFinish, back());
+            uninitializedFill(_finish, newFinish, T());
             copyBackward(pos, _finish, newFinish);
             copy(first, last, pos);
             _finish = newFinish;
