@@ -12,6 +12,7 @@ namespace tinystl {
     //    if a == b: *a == *b is true or a, b不能解引用
     //    if a == b: then ++a == ++b;
     // 2) forward itertor 可能不是可写的
+    // 3) Input Iterator可能只能遍历一次
     struct ForwardIteratorTag: public InputIteratorTag {};
     struct BidirectionalIteratorTag: public ForwardIteratorTag {};
     struct RandomAccessIteratorTag: public BidirectionalIteratorTag {};
@@ -35,10 +36,6 @@ namespace tinystl {
         using Reference = T&;
     };
 
-    // 感觉这个是多余的
-    // 写到后来发现并不多余,因为会去掉顶层const属性,所以T并不是const的.
-    // 而const T* 会表示ConstIterator,所以要求解引用返回的是一个const
-    // 所以Reference = const T&
     template<typename T>
     struct IteratorTraits<const T*> {
         using IteratorCategory = RandomAccessIteratorTag;

@@ -33,7 +33,12 @@ namespace tinystl {
     public:
         ListIterator();
         ListIterator(ListNode<T> *node);
-        ListIterator(const Self &other);
+        // 亮点：这个构造函数主要完成非const类型到const类型的转化。
+        // 当类被实例化为const类型时，参数other是非const类型，可将其转化为const类型
+        // 当类被实例化为非const类型时，参数other也是非const类型，该函数是一个拷贝构造函数
+        ListIterator(const ListIterator<T, typename RemoveConst<Ref>::ResultType, typename RemoveConst<PointerType>::ResultType> &other);
+        // 道理同上
+        ListIterator& operator=(const ListIterator<T, typename RemoveConst<Ref>::ResultType, typename RemoveConst<PointerType>::ResultType> &other);
 
         Self& operator++();
         Self operator++(int);
@@ -41,8 +46,6 @@ namespace tinystl {
         Self operator--(int);
         Reference operator*();
         Pointer operator->();
-        bool operator==(const Self &other);
-        bool operator!=(const Self &other);
 
         ListNode<T> *__node;
     };
@@ -54,7 +57,14 @@ namespace tinystl {
     inline ListIterator<T, Ref, PointerType>::ListIterator(ListNode<T> *node): __node(node) {}
 
     template<typename T, typename Ref, typename PointerType>
-    inline ListIterator<T, Ref, PointerType>::ListIterator(const Self &other): __node(other.__node) {}
+    inline ListIterator<T, Ref, PointerType>::ListIterator(const ListIterator<T, typename RemoveConst<Ref>::ResultType, typename RemoveConst<PointerType>::ResultType> &other): __node(other.__node) {
+    }
+
+    template<typename T, typename Ref, typename PointerType>
+    inline ListIterator<T, Ref, PointerType>&
+    ListIterator<T, Ref, PointerType>::operator=(const ListIterator<T, typename RemoveConst<Ref>::ResultType, typename RemoveConst<PointerType>::ResultType> &other) {
+        __node = other.__node;
+    }
 
     template<typename T, typename Ref, typename PointerType>
     inline ListIterator<T, Ref, PointerType>&
@@ -98,56 +108,19 @@ namespace tinystl {
         return &__node->data;
     }
 
-    template<typename T, typename Ref, typename PointerType>
-    inline bool ListIterator<T, Ref, PointerType>::operator==(const Self &other) {
-        return this->__node == other.__node;
+    template<typename T, typename LRef, typename LPointerType,
+             typename RRef, typename RPointerType>
+    inline bool operator==(const ListIterator<T, LRef, LPointerType> &lhs,
+                          const ListIterator<T, RRef, RPointerType> &rhs) {
+        return lhs.__node == rhs.__node;
     }
 
-    template<typename T, typename Ref, typename PointerType>
-    inline bool ListIterator<T, Ref, PointerType>::operator!=(const Self &other) {
-        return this->__node != other.__node;
+    template<typename T, typename LRef, typename LPointerType,
+             typename RRef, typename RPointerType>
+    inline bool operator!=(const ListIterator<T, LRef, LPointerType> &lhs,
+                           const ListIterator<T, RRef, RPointerType> &rhs) {
+        return !(lhs == rhs);
     }
-
-    // 这个类主要是实现能从Itearator到ConstIterator的自动转换
-    // 只有构造函数不会被继承
-    // 重载的运算符就像普通成员函数一样,也会被子类继承
-    // operator=一般会被拷贝赋值操作给覆盖掉,造成operator=不能被继承假象
-    template<typename T, typename Ref, typename PointerType>
-    class ConstListIterator: public ListIterator<T, Ref, PointerType> {
-    private:
-        using _Base = ListIterator<T, Ref, PointerType>;
-        using _Self = ConstListIterator<T, Ref, PointerType>;
-    public:
-        // 继承父类的构造函数
-        using _Base::_Base;
-        using _Base::__node;
-        ConstListIterator(const ListIterator<T, typename RemoveConst<Ref>::ResultType, typename RemoveConst<PointerType>::ResultType> &it) {
-            this->__node = it.__node;
-        }
-
-        _Self& operator++() {
-            __node = __node->next;
-            return *this;
-        }
-
-        _Self operator++(int) {
-            _Self temp = *this;
-            __node = __node->next;
-            return temp;
-        }
-
-        _Self& operator--() {
-            __node = __node->prev;
-            return *this;
-        }
-
-        _Self operator--(int) {
-            _Self temp = *this;
-            __node = __node->prev;
-            return temp;
-        }
-
-    };
 
     // ----------------------------------------------------------------------
     // List class
@@ -163,7 +136,7 @@ namespace tinystl {
         using ConstPointer = const T*;
 
         using Iterator = ListIterator<T, T&, T*>;
-        using ConstIterator = ConstListIterator<T, const T&, const T*>;
+        using ConstIterator = ListIterator<T, const T&, const T*>;
         using ReverseIterator = ReverseIteratorTemplate<Iterator>;
         using ConstReverseIterator = ReverseIteratorTemplate<ConstIterator>;
 

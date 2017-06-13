@@ -14,23 +14,14 @@ namespace tinystl {
         return objSize < BUFFER_SIZE? BUFFER_SIZE / objSize: static_cast<std::size_t>(1);
     }
 
-    template<typename T, typename _Alloc>
-    class DequeBase;
-
-    template<typename T, typename _Alloc>
-    class Deque;
-
     template<typename T, typename Ref, typename PointerType>
     class DequeIterator {
     public:
-        using IteartorCategory = RandomAccessIteratorTag;
+        using IteratorCategory = RandomAccessIteratorTag;
         using ValueType = T;
         using Reference = Ref;
         using Pointer = PointerType;
         using DifferenceType = std::ptrdiff_t;
-
-        template<typename, typename >
-        friend class DequeBase;
 
     protected:
         using _MapPointer = T**;
@@ -38,13 +29,17 @@ namespace tinystl {
 
     public:
         DequeIterator(): __node(nullptr), __first(nullptr),
-                         __cur(nullptr), __last(nullptr) {}
-        DequeIterator(const _Self &other): __node(other.__node), __first(other.__first),
-                                           __cur(other.__cur), __last(other.__last) {}
+                         __cur(nullptr), __last(__first + bufferSize(sizeof(T))) {}
+        // 道理与ListIterator相同
+        DequeIterator(const DequeIterator<T, typename RemoveConst<Ref>::ResultType,
+                      typename RemoveConst<PointerType>::ResultType> &other)
+            : __node(other.__node), __first(other.__first),
+              __cur(other.__cur), __last(other.__last) {}
         DequeIterator(_MapPointer node, T *first, T *cur, T *last)
             : __node(node), __first(first), __cur(cur), __last(last) {}
 
-        _Self& operator=(const _Self &other) {
+        _Self& operator=(const DequeIterator<T, typename RemoveConst<Ref>::ResultType,
+                         typename RemoveConst<PointerType>::ResultType> &other) {
             __node = other.__node;
             __first = other.__first;
             __cur = other.__cur;
@@ -61,7 +56,8 @@ namespace tinystl {
 
         _Self operator++(int) {
             _Self temp = *this;
-            return ++temp;
+            operator++();
+            return temp;
         }
 
         _Self operator--() {
@@ -75,7 +71,8 @@ namespace tinystl {
 
         _Self operator--(int) {
             _Self temp = *this;
-            return --temp;
+            operator--();
+            return temp;
         }
 
         _Self& operator+=(DifferenceType n) {
@@ -92,7 +89,7 @@ namespace tinystl {
 
         _Self operator+(DifferenceType n) {
             _Self temp = *this;
-            return temp -= n;
+            return temp += n;
         }
 
         _Self& operator-=(DifferenceType n) {
@@ -112,13 +109,6 @@ namespace tinystl {
             return temp -= n;
         }
 
-        DifferenceType operator-(const _Self &other) {
-            DifferenceType dis = (__node - other.__node - 1) * bufferSize(sizeof(ValueType));
-            dis += __cur - __first + 1;
-            dis += other.__last - other.__cur;
-            return dis;
-        }
-
         Reference operator*() {
             return *__cur;
         }
@@ -127,41 +117,19 @@ namespace tinystl {
             return __cur;
         }
 
-        bool operator==(const _Self &other) {
-            return __node == other.__node && __first == other.__first &&
-                __cur == other.__cur && __last == other.__last;
+        DequeIterator<T, typename RemoveConst<Ref>::ResultType,
+                      typename RemoveConst<PointerType>::ResultType>
+        removeConst() const {
+            return DequeIterator<T, typename RemoveConst<Ref>::ResultType,
+                                 typename RemoveConst<PointerType>::ResultType>(__node, __first, __cur, __last);
         }
 
-        bool operator!=(const _Self &other) {
-            return !(*this == other);
-        }
-
-        bool operator<(const _Self &other) {
-            return __node < other.__node ||
-                            (__node == other.__node && __cur < other.__cur);
-        }
-
-        bool operator>(const _Self &other) {
-            return __node > other.__node ||
-                (__node == other.__node && __cur > other.__cur);
-        }
-
-        bool operator<=(const _Self &other) {
-            return !(*this > other);
-        }
-
-        bool operator>=(const _Self &other) {
-            return !(*this < other);
-        }
-
-    protected:
         void _setMapNode(_MapPointer newNode) {
             __node = newNode;
             __first = *__node;
             __last = __first + bufferSize(sizeof(T));
         }
 
-    private:
         _MapPointer __node;
         T *__first;
         T *__cur;
@@ -169,66 +137,66 @@ namespace tinystl {
     };
 
     template<typename T, typename Ref, typename PointerType>
-    DequeIterator<T, Ref, PointerType> operator+(typename DequeIterator<T, Ref, PointerType>::DifferenceType n,
-                                                 const DequeIterator<T, Ref, PointerType> &iter) {
+    inline DequeIterator<T, Ref, PointerType> operator+(typename DequeIterator<T, Ref, PointerType>::DifferenceType n,
+                                                        const DequeIterator<T, Ref, PointerType> &iter) {
         return iter + n;
     }
 
-    template<typename T, typename Ref, typename PointerType>
-    class ConstDequeIterator: public DequeIterator<T, Ref, PointerType> {
-    private:
-        using __Base = DequeIterator<T, Ref, PointerType>;
-    protected:
-        using _Self = ConstDequeIterator<T, Ref, PointerType>;
-    public:
-        using __Base::__Base;
-        using typename __Base::DifferenceType;
+    template<typename T, typename LRef, typename LPointerType,
+             typename RRef, typename RPointerType>
+    inline typename DequeIterator<T, LRef, LPointerType>::DifferenceType
+    operator-(const DequeIterator<T, LRef, LPointerType> &lhs,
+              const DequeIterator<T, RRef, RPointerType> &rhs) {
+        typename DequeIterator<T, LRef, LPointerType>::DifferenceType dis =
+            (lhs.__node - rhs.__node - 1) * bufferSize(sizeof(T));
+        dis += lhs.__cur - lhs.__first;
+        dis += rhs.__last - rhs.__cur;
+        return dis;
+    }
 
-        _Self& operator=(const _Self &other) {
-            __Base::operator=(other);
-            return *this;
-        }
+    template<typename T, typename LRef, typename LPointerType,
+             typename RRef, typename RPointerType>
+    inline bool operator==(const DequeIterator<T, LRef, LPointerType> &lhs,
+                           const DequeIterator<T, RRef, RPointerType> &rhs) {
+        return lhs.__cur == rhs.__cur;
+    }
 
-        _Self& operator++() {
-            __Base::operator++();
-            return *this;
-        }
+    template<typename T, typename LRef, typename LPointerType,
+             typename RRef, typename RPointerType>
+    inline bool operator!=(const DequeIterator<T, LRef, LPointerType> &lhs,
+                           const DequeIterator<T, RRef, RPointerType> &rhs) {
+        return !(lhs == rhs);
+    }
 
-        _Self operator++(int) {
-            _Self temp = *this;
-            return ++temp;
-        }
+    template<typename T, typename LRef, typename LPointerType,
+             typename RRef, typename RPointerType>
+    inline bool operator<(const DequeIterator<T, LRef, LPointerType> &lhs,
+                          const DequeIterator<T, RRef, RPointerType> &rhs) {
+        return lhs.__node < rhs.__node ||
+                            (lhs.__node == rhs.__node && lhs.__cur < rhs.__cur);
+    }
 
-        _Self operator--() {
-            __Base::operator--();
-            return *this;
-        }
+    template<typename T, typename LRef, typename LPointerType,
+             typename RRef, typename RPointerType>
+    inline bool operator>(const DequeIterator<T, LRef, LPointerType> &lhs,
+                          const DequeIterator<T, RRef, RPointerType> &rhs) {
+        return lhs.__node > rhs.__node ||
+            (lhs.__node == rhs.__node && lhs.__cur > rhs.__cur);
+    }
 
-        _Self operator--(int) {
-            _Self temp = *this;
-            return --temp;
-        }
+    template<typename T, typename LRef, typename LPointerType,
+             typename RRef, typename RPointerType>
+    inline bool operator<=(const DequeIterator<T, LRef, LPointerType> &lhs,
+                           const DequeIterator<T, RRef, RPointerType> &rhs) {
+        return !(lhs > rhs);
+    }
 
-        _Self& operator+=(DifferenceType n) {
-            __Base::operator+=(n);
-            return *this;
-        }
-
-        _Self operator+(DifferenceType n) {
-            _Self temp = *this;
-            return temp += n;
-        }
-
-        _Self& operator-=(DifferenceType n) {
-            __Base::operator-=(n);
-            return *this;
-        }
-
-        _Self operator-(DifferenceType n) {
-            _Self temp = *this;
-            return temp -= n;
-        }
-    };
+    template<typename T, typename LRef, typename LPointerType,
+             typename RRef, typename RPointerType>
+    inline bool operator>=(const DequeIterator<T, LRef, LPointerType> &lhs,
+                           const DequeIterator<T, RRef, RPointerType> &rhs) {
+        return !(lhs < rhs);
+    }
 
     template<typename T, typename _Alloc>
     class DequeBase {
@@ -286,13 +254,13 @@ namespace tinystl {
 
         void _deallocateNodes(T **first, T **last) {
             while(first != last) {
-                _deallocateANode(*first);
+                _deallocateANode(*first++);
             }
         }
 
         void _initializeMap(std::size_t elementCount) {
             const std::size_t nodesCount = elementCount / bufferSize(sizeof(T)) + 1;
-            _mapSize = max(INITIALIZE_MAP_SIZE, nodesCount + 2);
+            _mapSize = max(static_cast<std::size_t>(INITIALIZE_MAP_SIZE), nodesCount + 2);
             _mapPointer = _allocateMap(_mapSize);
             T **first = _mapPointer + (_mapSize - nodesCount) / 2;
             T **last = first + nodesCount;
@@ -318,7 +286,7 @@ namespace tinystl {
         Iterator _finish;
     };
 
-    template<typename T, typename _Alloc>
+    template<typename T, typename _Alloc=Alloc>
     class Deque: public DequeBase<T, _Alloc> {
     public:
         using ValueType = T;
@@ -329,7 +297,7 @@ namespace tinystl {
         using Pointer = T*;
         using ConstPointer = const T*;
         using Iterator = DequeIterator<T, T&, T*>;
-        using ConstIterator = ConstDequeIterator<T, const T&, const T*>;
+        using ConstIterator = DequeIterator<T, const T&, const T*>;
         using ReverseIterator = ReverseIteratorTemplate<Iterator>;
         using ConstReverseIterator = ReverseIteratorTemplate<ConstIterator>;
     protected:
@@ -342,6 +310,7 @@ namespace tinystl {
         using _Base::_deallocateANode;
         using _Base::_allocateMap;
         using _Base::_deallocateMap;
+        using _Base::_deallocateNodes;
 
         using _Base::_mapPointer;
         using _Base::_mapSize;
@@ -349,7 +318,7 @@ namespace tinystl {
         using _Base::_finish;
 
     public:
-        Deque() {}
+        Deque(): _Base(0) {}
         Deque(SizeType count, const T &value);
         explicit Deque(SizeType count);
         template<typename InputIterator>
@@ -368,22 +337,22 @@ namespace tinystl {
         ConstReference at(int pos) const { _checkPos(pos); return (*this)[pos]; }
         Reference front() { return *begin(); }
         ConstReference front() const { return *cbegin(); }
-        Reference back() { return *end(); }
-        ConstReference back() const { return *cend(); }
+        Reference back() { return *(--end()); }
+        ConstReference back() const { return *(--cend()); }
 
         Iterator begin() { return _start; }
-        ConstIterator begin() const { return ConstIterator(begin()); }
-        ConstIterator cbegin() { return ConstIterator(begin()); }
+        ConstIterator begin() const { return ConstIterator(_start); }
+        ConstIterator cbegin() const { return ConstIterator(_start); }
         Iterator end() { return _finish; }
         ConstIterator end() const { return ConstIterator(_finish); }
-        ConstIterator cend() { return ConstIterator(_finish); }
+        ConstIterator cend() const { return ConstIterator(_finish); }
 
         ReverseIterator rbegin() { return ReverseIterator(end()); }
         ConstReverseIterator rbegin() const { return ConstReverseIterator(cend()); }
-        ConstReverseIterator crbegin() { return ConstReverseIterator(cend()); };
+        ConstReverseIterator crbegin() const { return ConstReverseIterator(cend()); };
         ReverseIterator rend() { return ReverseIterator(begin()); }
-        ReverseIterator rend() const { return ConstReverseIterator(cbegin()); }
-        ReverseIterator crend() const { return ConstReverseIterator(cbegin()); }
+        ConstReverseIterator rend() const { return ConstReverseIterator(cbegin()); }
+        ConstReverseIterator crend() const { return ConstReverseIterator(cbegin()); }
 
         bool empty() const { return _start == _finish; }
         SizeType size() const { return _finish - _start; }
@@ -453,6 +422,31 @@ namespace tinystl {
 
         void _pushBackAux(const T &value);
         void _pushFrontAux(const T &value);
+
+        Iterator _fillInsert(Iterator pos, SizeType count, const T &value);
+        Iterator _fillInsertAux(Iterator pos, SizeType count, const T &value);
+
+        template<typename InputIterator>
+        Iterator _rangeInsert(Iterator pos, InputIterator first, InputIterator last);
+
+        template<typename Integer>
+        Iterator _rangeInsertAux(Iterator pos, Integer count,
+                                 Integer value, TrueType);
+        template<typename InputIterator>
+        Iterator _rangeInsertAux(Iterator pos, InputIterator first,
+                                 InputIterator last, FalseType);
+        template<typename InputIterator>
+        Iterator _rangeInsertAux2(Iterator pos, InputIterator first,
+                                  InputIterator last, InputIteratorTag);
+        template<typename ForwardIterator>
+        Iterator _rangeInsertAux2(Iterator pos, ForwardIterator first,
+                                  ForwardIterator last, ForwardIteratorTag);
+
+        Iterator _erase(Iterator pos);
+        Iterator _erase(Iterator first, Iterator last);
+
+        void _popBackAux();
+        void _popFrontAux();
     };
 
     template<typename T, typename _Alloc>
@@ -462,6 +456,12 @@ namespace tinystl {
 
     template<typename T, typename _Alloc>
     inline Deque<T, _Alloc>::Deque(SizeType count): Deque(count, T()) {}
+
+    template<typename T, typename _Alloc>
+    template<typename InputIterator>
+    inline Deque<T, _Alloc>::Deque(InputIterator first, InputIterator last) {
+        _rangeInitialize(first, last);
+    }
 
     template<typename T, typename _Alloc>
     template<typename InputIterator>
@@ -532,7 +532,7 @@ namespace tinystl {
             fillN(begin(), count, value);
             erase(begin() + count, end());
         } else {
-            fillN(begin(), end(), value);
+            fill(begin(), end(), value);
             insert(end(), count - size(), value);
         }
     }
@@ -576,7 +576,7 @@ namespace tinystl {
     template<typename T, typename _Alloc>
     inline typename Deque<T, _Alloc>::Iterator
     Deque<T, _Alloc>::_reserveElementAtFront(SizeType count) {
-        const SizeType restItemCountOfCurrentNode = _start.__cur - _start.__frist;
+        const SizeType restItemCountOfCurrentNode = _start.__cur - _start.__first;
         if(count > restItemCountOfCurrentNode) {
             _newElementsAtFront(count - restItemCountOfCurrentNode);
         }
@@ -638,7 +638,7 @@ namespace tinystl {
             if(newStart < _start.__node) {
                 copy(_start.__node, _finish.__node + 1, newStart);
             } else {
-                copyBackward(_start.__node, _finish.__node + 1, newStart);
+                copyBackward(_start.__node, _finish.__node + 1, newStart + oldNodeCount);
             }
         } else {
             const SizeType newMapSize = _mapSize + max(_mapSize, newNodeCount) + 2;
@@ -647,7 +647,7 @@ namespace tinystl {
                 (addAtFront? addNodeCount: 0);
             copy(_start.__node, _finish.__node + 1, newStart);
 
-            _deallocateMap(_mapPointer);
+            _deallocateMap(_mapPointer, _mapSize);
             _mapPointer = newMapPointer;
             _mapSize = newMapSize;
         }
@@ -719,6 +719,295 @@ namespace tinystl {
     template<typename T, typename _Alloc>
     typename Deque<T, _Alloc>::Iterator
     Deque<T, _Alloc>::insert(ConstIterator pos, const T &value) {
+        if(pos == _start) {
+            pushFront(value);
+            return _start;
+        }
+        if(pos == _finish) {
+            pushBack(value);
+            return _finish - 1;
+        }
+        DifferenceType index = pos - _start;
+        ValueType valueCopy = value;
+        if(static_cast<SizeType>(index) < size() / 2) {
+            pushFront(front());
+            Iterator insertPos = _start + index;
+            copy(_start + 2, insertPos + 1, _start + 1);
+            *insertPos = valueCopy;
+            return insertPos;
+        } else {
+            pushBack(back());
+            Iterator insertPos = _start + index;
+            copy(insertPos, _finish - 2, _finish - 1);
+            *insertPos = valueCopy;
+            return insertPos;
+        }
+    }
+
+    template<typename T, typename _Alloc>
+    typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::_fillInsertAux(Iterator pos, SizeType count,
+                                     const T &value) {
+        const SizeType frontElementCount = pos - _start;
+        if(frontElementCount < size() / 2) {
+            Iterator newStart = _reserveElementAtFront(count);
+            if(frontElementCount <= count) {
+                Iterator it = uninitializedCopy(_start, pos, newStart);
+                uninitializedFill(it, _start, value);
+                fill(_start, pos, value);
+            } else {
+                uninitializedCopy(_start, _start + count, newStart);
+                copy(_start + count, pos, _start);
+                fill(pos - count, pos, value);
+            }
+            _start = newStart;
+        } else {
+            Iterator newFinish = _reserveElementAtBack(count);
+            uninitializedFill(_finish, newFinish, value);
+            copyBackward(pos, _finish, newFinish);
+            fillN(pos, count, value);
+            _finish = newFinish;
+        }
+        return _start + frontElementCount;
+    }
+
+    template<typename T, typename _Alloc>
+    typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::_fillInsert(Iterator pos, SizeType count,
+                                  const T &value) {
+        if(pos == _start) {
+            Iterator newStart = _reserveElementAtFront(count);
+            uninitializedFill(newStart, _start, value);
+            _start = newStart;
+            return _start;
+        }
+        if(pos == _finish) {
+            Iterator newFinish = _reserveElementAtBack(count);
+            uninitializedFill(_finish, newFinish, value);
+            Iterator ret = _finish;
+            _finish = newFinish;
+            return ret;
+        }
+        return _fillInsertAux(pos, count, value);
+    }
+
+    template<typename T, typename _Alloc>
+    typename Deque<T, _Alloc>::Iterator
+    inline Deque<T, _Alloc>::insert(ConstIterator pos, SizeType count, const T &value) {
+        return _fillInsert(pos.removeConst(), count, value);
+    }
+
+    template<typename T, typename _Alloc>
+    template<typename InputIterator>
+    typename Deque<T, _Alloc>::Iterator
+    inline Deque<T, _Alloc>::insert(ConstIterator pos, InputIterator first,
+                                    InputIterator last) {
+        return _rangeInsert(pos.removeConst(), first, last);
+    }
+
+    template<typename T, typename _Alloc>
+    template<typename InputIterator>
+    inline typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::_rangeInsert(Iterator pos, InputIterator first,
+                                   InputIterator last) {
+        return _rangeInsertAux(pos, first, last,
+                               typename IsInteger<InputIterator>::Integral());
+    }
+
+    template<typename T, typename _Alloc>
+    template<typename Integer>
+    inline typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::_rangeInsertAux(Iterator pos, Integer count,
+                    Integer value, TrueType) {
+        return _fillInsert(pos, static_cast<SizeType>(count), static_cast<T>(value));
+    }
+
+    template<typename T, typename _Alloc>
+    template<typename InputIterator>
+    inline typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::_rangeInsertAux(Iterator pos, InputIterator first,
+                    InputIterator last, FalseType) {
+        using IteratorType = typename IteratorTraits<InputIterator>::IteratorCategory;
+        return _rangeInsertAux2(pos, first, last, IteratorType());
+    }
+
+    template<typename T, typename _Alloc>
+    template<typename InputIterator>
+    inline typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::_rangeInsertAux2(Iterator pos, InputIterator first,
+                                       InputIterator last, InputIteratorTag) {
+        const DifferenceType firstInsertIndex = pos - _start;
+        while(first != last) {
+            pos = insert(pos, *first);
+            ++pos;
+            ++first;
+        }
+        return _start + firstInsertIndex;
+    }
+
+    template<typename T, typename _Alloc>
+    template<typename ForwardIterator>
+    typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::_rangeInsertAux2(Iterator pos, ForwardIterator first,
+                                       ForwardIterator last, ForwardIteratorTag) {
+        const SizeType count = tinystl::distance(first, last);
+        const SizeType frontElementCount = static_cast<SizeType>(pos - _start);
+        if(frontElementCount < size() / 2) {
+            Iterator newStart = _reserveElementAtFront(count);
+            if(frontElementCount <= count) {
+                Iterator it = uninitializedCopy(_start, pos, newStart);
+                ForwardIterator mid = first + (count - frontElementCount);
+                uninitializedCopy(first, mid, it);
+                copy(mid, last, _start);
+            } else {
+                uninitializedCopy(_start, _start + count, newStart);
+                Iterator it = copy(_start + count, pos, _start);
+                copy(first, last, it);
+            }
+            _start = newStart;
+        } else {
+            Iterator newFinish = _reserveElementAtBack(count);
+            uninitializedFill(_finish, newFinish, back());
+            copyBackward(pos, _finish, newFinish);
+            copy(first, last, pos);
+            _finish = newFinish;
+        }
+        return _start + static_cast<DifferenceType>(frontElementCount);
+    }
+
+    template<typename T, typename _Alloc>
+    typename Deque<T, _Alloc>::Iterator
+    inline Deque<T, _Alloc>::erase(ConstIterator pos) {
+        return _erase(pos.removeConst());
+    }
+
+    template<typename T, typename _Alloc>
+    typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::_erase(Iterator pos) {
+        const SizeType frontElementCount = static_cast<SizeType>(pos - _start);
+        if(frontElementCount < size() / 2) {
+            copyBackward(_start, pos, pos + 1);
+            popFront();
+        } else {
+            copy(pos + 1, _finish, pos);
+            popBack();
+        }
+        return _start + static_cast<DifferenceType>(frontElementCount);
+    }
+
+    template<typename T, typename _Alloc>
+    typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::erase(ConstIterator first, ConstIterator last) {
+        return _erase(first.removeConst(), last.removeConst());
+    }
+
+    template<typename T, typename _Alloc>
+    typename Deque<T, _Alloc>::Iterator
+    Deque<T, _Alloc>::_erase(Iterator first, Iterator last) {
+        const SizeType frontElementCount = first - _start;
+        const SizeType restCount = size() - static_cast<SizeType>(last - first);
+        if(frontElementCount < restCount / 2) {
+            Iterator newStart = copyBackward(_start, first, last);
+            destroy(_start, newStart);
+            _deallocateNodes(_start.__node, newStart.__node);
+            _start = newStart;
+        } else {
+            Iterator newFinish = copy(last, _finish, first);
+            destroy(newFinish, _finish);
+            _deallocateNodes(newFinish.__node + 1, _finish.__node + 1);
+            _finish = newFinish;
+        }
+        return _start + static_cast<SizeType>(frontElementCount);
+    }
+
+    template<typename T, typename _Alloc>
+    inline void Deque<T, _Alloc>::popBack() {
+        if(_finish.__cur != _finish.__first) {
+            --_finish.__cur;
+            destroy(_finish.__cur);
+        } else {
+            _popBackAux();
+        }
+    }
+
+    template<typename T, typename _Alloc>
+    inline void Deque<T, _Alloc>::_popBackAux() {
+        _deallocateANode(*_finish.__node);
+        _finish._setMapNode(_finish.__node - 1);
+        _finish.__cur = _finish.__last - 1;
+        destroy(_finish.__cur);
+    }
+
+    template<typename T, typename _Alloc>
+    inline void Deque<T, _Alloc>::popFront() {
+        if(_start.__cur != _start.__last - 1) {
+            destroy(_start.__cur);
+            ++_start.__cur;
+        } else {
+            _popFrontAux();
+        }
+    }
+
+    template<typename T, typename _Alloc>
+    inline void Deque<T, _Alloc>::_popFrontAux() {
+        destroy(_start.__cur);
+        _deallocateANode(*_start.__node);
+        _start._setMapNode(_start.__node + 1);
+        _start.__cur = _start.__first;
+    }
+
+    template<typename T, typename _Alloc>
+    inline void Deque<T, _Alloc>::resize(SizeType count, const T &value) {
+        const SizeType oldCount = size();
+        if(oldCount < count) {
+            insert(cend(), count - oldCount, value);
+        } else {
+            erase(_finish - (oldCount - count), _finish);
+        }
+    }
+
+    template<typename T, typename _Alloc>
+    inline void Deque<T, _Alloc>::resize(SizeType count) {
+        resize(count, T());
+    }
+
+    template<typename T, typename _Alloc>
+    inline void Deque<T, _Alloc>::swap(_Self &other) {
+        tinystl::swap(_mapPointer, other._mapPointer);
+        tinystl::swap(_mapSize, other._mapSize);
+        tinystl::swap(_start, other._start);
+        tinystl::swap(_finish, other._finish);
+    }
+
+    template<typename T, typename _Alloc>
+    inline bool operator==(const Deque<T, _Alloc> &lhs, const Deque<T, _Alloc> &rhs) {
+        return lhs.size() == rhs.size() &&
+            equal(lhs.cbegin(), lhs.cend(), rhs.cbegin());
+    }
+
+    template<typename T, typename _Alloc>
+    inline bool operator!=(const Deque<T, _Alloc> &lhs, const Deque<T, _Alloc> &rhs) {
+        return !(lhs == rhs);
+    }
+
+    template<typename T, typename _Alloc>
+    inline bool operator>(const Deque<T, _Alloc> &lhs, const Deque<T, _Alloc> &rhs) {
+        return greater(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
+    }
+
+    template<typename T, typename _Alloc>
+    inline bool operator<(const Deque<T, _Alloc> &lhs, const Deque<T, _Alloc> &rhs) {
+        return less(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
+    }
+
+    template<typename T, typename _Alloc>
+    inline bool operator>=(const Deque<T, _Alloc> &lhs, const Deque<T, _Alloc> &rhs) {
+        return !(lhs < rhs);
+    }
+
+    template<typename T, typename _Alloc>
+    inline bool operator<=(const Deque<T, _Alloc> &lhs, const Deque<T, _Alloc> &rhs) {
+        return !(lhs > rhs);
     }
 
 }
