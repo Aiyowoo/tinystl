@@ -82,6 +82,9 @@ namespace tinystl {
     class DefaultAlloc {
     public:
         static void* allocate(std::size_t n) {
+            if(n == 0) {
+                return nullptr;
+            }
             if(n > MAX_SIZE) {
                 return MallocAllocator::allocate(n);
             }
