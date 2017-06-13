@@ -1,0 +1,132 @@
+* stl笔记
+  主要用来记录在编写tinystl时遇到的问题和解决方案。
+  和一些C++的知识防止以后忘记。
+** C++基础知识
+*** 合成拷贝控制成员
+    如果一个类有数据成员不能默认构造、拷贝、复制或销毁时，该类对应的成员函数被定义为删除的。
+    拷贝成员定义与否与该类其他拷贝成员是否定义无关。
+*** 合成移动控制成员
+    没有定义自己的拷贝控制成员，且类的每个非static数据成员都是可移动的。
+*** 构造函数出现异常
+    当某个类的构造函数中抛出异常时，会先将已经构造好的数据成员析构，然后逆向调用基类的析构函数。
+*** 函数继承
+    在发生继承时，只有构造函数不会被继承，重载的运算符就像普通成员函数一样也会被子类继承。
+    operator=操作符比较特殊，父类中的operator=操作符一般会被子类中的拷贝复制操作符覆盖掉，造成operator=不会被继承的假象。
+*** 友元与继承
+    友元只相对于当前类，并不会被子类继承。
+*** 类模板参数指定问题
+    类模板的显示指定的参数类型是什么传递过去的参数就是什么，并不会发生改变。
+    例如：
+    #+BEGIN_SRC c++
+      template<typename T, typename Ref, typename Pointer>
+      class Iterator {
+      };
+
+      Iterator<int, int&, int*> a;
+      // T = int, Ref = int&, Pointer = int*
+
+      Iterator<int, const int&, const int*> b;
+      // T = int, Ref = const int&, Pointer = int*;
+
+      // typeid().name 输出的值相同应该是typeid的问题。
+    #+END_SRC
+*** 模板函数参数推导
+    在一般情况下会去掉顶层const，在引用的情况下不会去掉顶层const。
+    #+BEGIN_SRC c++
+      #include <iostream>
+      #include <typeinfo>
+
+      template<typename T>
+      void fun(T t) {                 // 推导是会去掉顶层const
+          std::cout << typeid(T).name() << std::endl;
+      }
+
+      template<typename T>
+      void fun(T &t) {                // 不会去掉鼎城const
+          std::cout << typeid(T).name() << std::endl;
+      }
+    #+END_SRC
+*** 类模板参数
+    类模板参数中带const时
+    #+BEGIN_SRC c++
+      #include <iostream>
+
+      template<typename T>
+      struct OrgType {
+          using ResultType = T;
+          enum { CLASS_ID = 1 };
+      };
+
+      template<typename T>
+      struct OrgType<T *> {
+          using ResultType = T;
+          enum { CLASS_ID = 2};
+      };
+
+      // template<typename T>
+      // struct OrgType<const T*> {
+      //     using ResultType = T;
+      //     enum { CLASS_ID = 3 };
+      // };
+
+      int main(int argc, char *argv[])
+      {
+          typename OrgType<const int*>::ResultType a = 0;
+          a = 1;
+          return 0;
+      }
+
+    #+END_SRC
+    由上面的例子可知，类模板参数在传递过程中是不会改变的。
+*** 内置类型的初始化问题
+    1) 默认初始化
+       内置类型的默认初始化，并不会对变量做处理。
+    2) 值初始化
+       会赋予变量一个合理的值。
+       #+BEGIN_SRC C++
+         #include <iostream>
+
+         void fun() {
+             int a1;
+             std::cout << "int默认初始化 " << a1 << std::endl;
+             int a2 = int();
+             std::cout << "int值初始化 " << a2 << std::endl;
+             bool b;
+             std::cout << "bool默认初始化 " << b << std::endl;
+             bool b2 = bool();
+             std::cout << "bool值初始化 " << b2 << std::endl;
+         }
+
+         int main() {
+             fun();
+             return 0;
+         }
+       #+END_SRC
+
+         #+RESULTS:
+         | int默认初始化  | 0 |
+         | int值初始化    | 0 |
+         | bool默认初始化 | 0 |
+         | bool值初始化   | 0 |
+
+    4) 静态的会进行值初始化，局部的进行默认初始化。
+*** 合成的默认构造函数
+    1) 合成的默认构造函数不会对内置类型和复合类型的数据成员进行值初始化。
+    2) 只有在需要是才合成。
+       #+BEGIN_SRC C++
+         #include <iostream>
+
+         class A {
+         public:
+             bool b;
+             int a;
+         };
+
+         int main() {
+             A a;                        // 什么都没做
+             if(a.b) {
+                 std::cout << a.a << std::endl;
+             }
+             return 0;
+         }
+       #+END_SRC
