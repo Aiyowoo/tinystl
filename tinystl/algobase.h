@@ -135,7 +135,7 @@ namespace tinystl {
     // compare function obj
     template<typename T>
     struct Less {
-        bool operator()(const T &lhs, const T &rhs) {
+        bool operator()(const T &lhs, const T &rhs) const {
             return lhs < rhs;
         }
     };

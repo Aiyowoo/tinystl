@@ -28,7 +28,7 @@
       Iterator<int, const int&, const int*> b;
       // T = int, Ref = const int&, Pointer = int*;
 
-      // typeid().name 输出的值相同应该是typeid的问题。
+      // typeid().name 输出的值相同http://en.cppreference.com/w/cpp/language/reference_initialization应该是typeid的问题。
     #+END_SRC
 *** 模板函数参数推导
     在一般情况下会去掉顶层const，在引用的情况下不会去掉顶层const。
@@ -130,3 +130,41 @@
              return 0;
          }
        #+END_SRC
+
+*** 临时对象与常量引用
+    常量引用可以引用临时对象，当其引用临时对象时，会将该临时对象的生命周期延长为该常量引用的生命周期。
+    只有本地的常量引用有该功能。
+    [[http://en.cppreference.com/w/cpp/language/reference_initialization][In general, the lifetime of a temporary cannot be further extended by "passing it on": a second reference,
+    initialized from the reference to which the temporary was bound, does not affect its lifetime. ]]
+    #+BEGIN_SRC C++
+      #include <iostream>
+      #include <string>
+
+      class A {
+      public:
+          A(const std::string &_str): str(_str) {}
+          const std::string &str;
+      };
+
+      A fun() {
+          A a(std::string("hello world"));
+          return a;
+      }
+
+      int main() {
+          // 这种是未定义行为！
+          A a = fun();
+          std::cout << "The string is " << a.str << std::endl;
+          return 0;
+      }
+    #+END_SRC
+
+    #+BEGIN_SRC C++
+
+      template<typename T>
+      void func(const T &t=T()) {
+          T t2 = t;
+          // 因为const T&t是常量引用，在函数体内可以将临时对象的生命周期延长，所以在这里没有问题。
+      }
+
+    #+END_SRC
