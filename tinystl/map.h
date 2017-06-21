@@ -67,7 +67,7 @@ namespace tinystl {
         MappedType& operator[](const KeyType &key) {
             Iterator it = find(key);
             if(it == end()) {
-                it = insert(makePair<KeyType, MappedType>(key, MappedType()));
+                it = insert(makePair<KeyType, MappedType>(key, MappedType())).first;
             }
             return it->second;
         }

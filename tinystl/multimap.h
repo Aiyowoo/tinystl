@@ -71,7 +71,7 @@ namespace tinystl {
 
         void clear() { __container.clear(); }
 
-        Pair<Iterator, bool> insert(const ValueType &value) {
+        Iterator insert(const ValueType &value) {
             return __container.insertEqual(value);
         }
         Iterator insert(Iterator hint, const ValueType &value) {

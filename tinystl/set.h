@@ -44,7 +44,7 @@ namespace tinystl {
         template<typename InputIterator>
         Set(InputIterator first, InputIterator last,
             const Compare &compare = Compare()): __container(compare) {
-            __container.insert(first, last);
+            __container.insertUnique(first, last);
         }
         Set(const __Self&) = default;
         __Self& operator=(const __Self &other) = default;
@@ -55,12 +55,12 @@ namespace tinystl {
         Iterator end() { return __container.end(); }
         ConstIterator end() const { return __container.end(); }
         ConstIterator cend() const { return __container.cend(); }
-        Iterator rbegin() { return __container.rbegin(); }
-        ConstIterator rbegin() const { return __container.rbegin(); }
-        ConstIterator crbegin() const { return __container.crbegin(); }
-        ConstIterator rend() { return __container.rend(); }
-        ConstIterator rend() const { return __container.rend(); }
-        ConstIterator crend() const { return __container.crend(); }
+        ReverseIterator rbegin() { return __container.rbegin(); }
+        ConstReverseIterator rbegin() const { return __container.rbegin(); }
+        ConstReverseIterator crbegin() const { return __container.crbegin(); }
+        ReverseIterator rend() { return __container.rend(); }
+        ConstReverseIterator rend() const { return __container.rend(); }
+        ConstReverseIterator crend() const { return __container.crend(); }
 
         bool empty() const { return __container.empty(); }
         SizeType size() const { return __container.size(); }

@@ -54,12 +54,12 @@ namespace tinystl {
         }
         __RBTreeNodeBase *xRightSon = x->right;
         xRightSon->parent = x->parent;
-        if(x->parent) {
-            if(x == x->parent->left) {
-                x->parent->left = xRightSon;
-            } else {
-                x->parent->right = xRightSon;
-            }
+        if(root == x) {
+            root = xRightSon;
+        } else if(x == x->parent->left) {
+            x->parent->left = xRightSon;
+        } else {
+            x->parent->right = xRightSon;
         }
         x->right = xRightSon->left;
         if(x->right) {
@@ -68,9 +68,6 @@ namespace tinystl {
         xRightSon->left = x;
         x->parent = xRightSon;
 
-        if(root == x) {
-            root = xRightSon;
-        }
     }
 
     void __rightRotate(__RBTreeNodeBase* &root, __RBTreeNodeBase *x) {
@@ -80,12 +77,12 @@ namespace tinystl {
         }
         __RBTreeNodeBase *xLeftSon = x->left;
         xLeftSon->parent = x->parent;
-        if(x->parent) {
-            if(x == x->parent->left) {
-                x->parent->left = xLeftSon;
-            } else {
-                x->parent->right = xLeftSon;
-            }
+        if(root == x) {
+            root = xLeftSon;
+        } else if(x == x->parent->left) {
+            x->parent->left = xLeftSon;
+        } else {
+            x->parent->right = xLeftSon;
         }
         x->left = xLeftSon->right;
         if(x->left) {
@@ -93,9 +90,6 @@ namespace tinystl {
         }
         xLeftSon->right = x;
         x->parent = xLeftSon;
-        if(root == x) {
-            root = xLeftSon;
-        }
     }
 
     void __rebalanceTreeAfterInsert(__RBTreeNodeBase* &root,
@@ -274,14 +268,14 @@ namespace tinystl {
             // 更新leftmost,rightmost;
             if(leftMost == z) {
                 if(z->right) {
-                    leftMost = __RBTreeNodeBase::getMinNode(z);
+                    leftMost = __RBTreeNodeBase::getMinNode(x);
                 } else {
                     leftMost = z->parent;
                 }
             }
             if(rightMost == z) {
                 if(z->left) {
-                    rightMost = __RBTreeNodeBase::getMaxNode(z);
+                    rightMost = __RBTreeNodeBase::getMaxNode(x);
                 } else {
                     rightMost = z->parent;
                 }
@@ -698,6 +692,10 @@ namespace tinystl {
     RBTree<Key, Value, KeyOfValue, Compare, _Alloc>::insertUnique(const ValueType &value) {
         _LinkType cur = _header;
         _LinkType next = _root();
+        if(next == nullptr) {
+            return Pair<Iterator, bool>(__insert(next, cur, value), true);
+        }
+
         while(next) {
             cur = next;
             next = _key_comparer(KeyOfValue()(value), _key(next))?
@@ -813,7 +811,7 @@ namespace tinystl {
     inline void RBTree<Key, Value, KeyOfValue, Compare, _Alloc>::
     insertEqual(InputIterator first, InputIterator last) {
         while(first != last) {
-            insertEqual(*first);
+            insertEqual(*first++);
         }
     }
 
@@ -891,7 +889,7 @@ namespace tinystl {
              typename Compare, typename _Alloc>
     inline typename RBTree<Key, Value, KeyOfValue, Compare, _Alloc>::SizeType
     RBTree<Key, Value, KeyOfValue, Compare, _Alloc>::count(const KeyType &key) const {
-        Pair<Iterator, Iterator> range = equalRange(key);
+        Pair<ConstIterator, ConstIterator> range = equalRange(key);
         return tinystl::distance(range.first, range.second);
     }
 
