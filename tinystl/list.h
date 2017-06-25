@@ -44,8 +44,8 @@ namespace tinystl {
         Self operator++(int);
         Self& operator--();
         Self operator--(int);
-        Reference operator*();
-        Pointer operator->();
+        Reference operator*() const;
+        Pointer operator->() const;
 
         ListNode<T> *__node;
     };
@@ -98,13 +98,13 @@ namespace tinystl {
 
     template<typename T, typename Ref, typename PointerType>
     inline typename ListIterator<T, Ref, PointerType>::Reference
-    ListIterator<T, Ref, PointerType>::operator*() {
+    ListIterator<T, Ref, PointerType>::operator*() const {
         return __node->data;
     }
 
     template<typename T, typename Ref, typename PointerType>
     inline typename ListIterator<T, Ref, PointerType>::Pointer
-    ListIterator<T, Ref, PointerType>::operator->() {
+    ListIterator<T, Ref, PointerType>::operator->() const {
         return &__node->data;
     }
 

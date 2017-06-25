@@ -141,6 +141,13 @@ namespace tinystl {
     };
 
     template<typename T>
+    struct Equal {
+        bool operator()(const T &lhs, const T &rhs) const {
+            return lhs == rhs;
+        }
+    };
+
+    template<typename T>
     struct Greater {
         bool operator()(const T &lhs, const T &rhs) {
             return lhs > rhs;

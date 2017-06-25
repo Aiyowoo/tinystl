@@ -355,10 +355,10 @@ namespace tinystl {
             _node = other._node;
         }
 
-        Reference operator*() {
+        Reference operator*() const {
             return static_cast<_LinkType>(_node)->data;
         }
-        Pointer operator->() {
+        Pointer operator->() const {
             return &(operator*());
         }
         _Self& operator++() {

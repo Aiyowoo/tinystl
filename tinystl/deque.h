@@ -109,11 +109,11 @@ namespace tinystl {
             return temp -= n;
         }
 
-        Reference operator*() {
+        Reference operator*() const {
             return *__cur;
         }
 
-        Pointer operator->() {
+        Pointer operator->() const {
             return __cur;
         }
 
