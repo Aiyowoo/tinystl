@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <sys/select.h>
 #include <vector>
 #include "../tinystl/vector.h"
 #include "../tinystl/algobase.h"

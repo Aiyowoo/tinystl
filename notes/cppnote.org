@@ -15,7 +15,7 @@
 *** 友元与继承
     友元只相对于当前类，并不会被子类继承。
 *** 类模板参数指定问题
-    类模板的显示指定的参数类型是什么传递过去的参数就是什么，并不会发生改变。
+    类模板的显式指定的参数类型是什么传递过去的参数就是什么，并不会发生改变。
     例如：
     #+BEGIN_SRC c++
       template<typename T, typename Ref, typename Pointer>
@@ -42,7 +42,7 @@
       }
 
       template<typename T>
-      void fun(T &t) {                // 不会去掉鼎城const
+      void fun(T &t) {                // 不会去掉顶层const
           std::cout << typeid(T).name() << std::endl;
       }
     #+END_SRC
